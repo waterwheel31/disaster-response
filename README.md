@@ -7,7 +7,9 @@
 This is a simple web app to read disaster response messages and judge what kind of messages they are.
 
 
-### Instructions:
+![image](screenshot.png)
+
+### Instructions for running:
 1. Run the following commands in `deploy` directory to set up the database and model.
 
     - To run ETL pipeline that cleans data and stores in database

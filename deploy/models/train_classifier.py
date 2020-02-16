@@ -32,9 +32,7 @@ import pickle
 def load_data(database_filepath):
     engine = create_engine(database_filepath)
     df = pd.read_sql_table('data',con=engine)
-    
-    print('df:', df.head())
-
+   
     X = df.iloc[:,0].values
     Y = df.iloc[:,3:]
     category_names = Y.columns
@@ -65,8 +63,6 @@ def preprocess(X):
 
 def preprocess_test(X, vectorizer, tfidf):
 
-    print('vectorizer:', vectorizer)
-    print('tfidf:', tfidf)
     X = vectorizer.transform(X)
     X = tfidf.transform(X)
     
@@ -77,8 +73,6 @@ def train(X, Y):
     error_cols = []
     
     num_col = Y.shape[1]
-    
-    print('num_col:', num_col)
    
     for i in range(num_col):
  
@@ -102,10 +96,6 @@ def pipeline_orig(X, y):
 
 
 def predict(clfs, X, num_col, vectorizer, tfidf, error_cols=None):
-    
-    print('num_col:', num_col)
-    print('error_cols:', error_cols)
-    print('X:', X)
     
     result = []
     
@@ -134,9 +124,7 @@ def build_model(model_path):
 
 def evaluate_model(y_pred, y_test, category_names):
     
-    print('y_pred:')
-    print(y_pred)
-
+   
     try: 
         num_col = num_col = y_pred.shape[1]
     except: 
@@ -207,7 +195,7 @@ def main():
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
         
         print('Building model...')
-        model = build_model(model_filepath)
+        #model = build_model(model_filepath)
         
         print('Training model...')
         clfs, num_col, error_cols, vectorizer, tfidf = pipeline_orig(X_train, Y_train)
@@ -216,14 +204,12 @@ def main():
 
         print('Evaluating model...')
         Y_test = Y_test
-        print('Y_test:', Y_test)
-        print('X_test:', X_test)
-
+       
         Y_pred = predict(clfs, X_test, num_col, vectorizer, tfidf, error_cols)
         evaluate_model(Y_pred, Y_test, category_names)
 
         print('Saving model...\n    MODEL: {}'.format(model_filepath))
-        save_model(model, model_filepath)
+        save_model(clfs, model_filepath)
         pickle.dump(vectorizer, open('models/vectorizer.pkl', 'wb'))
         pickle.dump(tfidf, open('models/tfidf.pkl', 'wb'))
         

@@ -34,6 +34,8 @@ def tokenize(text):
 # load data
 engine = create_engine('sqlite:///../data/database.db')
 df = pd.read_sql_table('data', engine)
+classification_labels = df.iloc[:,3:].columns
+
 
 # load model
 #model = joblib.load('../models/finalized_model.pkl')
@@ -89,22 +91,20 @@ def index():
 @app.route('/go')
 def go():
     # save user input in query
-    print('click')
     query = request.args.get('query', '') 
 
     # use model to predict classification for query
-    num_col = 36
+    print(df.head())
+    num_col = len(classification_labels)
     error_cols = [9]
 
     predict = train_classifier.predict(model, [query], num_col, vectorizer, tfidf, error_cols)
-    print('predict:', predict)
 
     print('classification_labels:', classification_labels)
 
-    print('df:', df.columns[4:])
+    classification_results =  dict(zip(classification_labels, predict[0]))
 
-    #classification_results = dict(zip(df.columns[4:][0], classification_labels))
-    classification_results = {df.columns[4:][0] : classification_labels}
+    print('classification_results:', classification_results)
 
     # This will render the go.html Please see that file. 
     return render_template(
