@@ -21,17 +21,19 @@ def clean_data(df):
         # convert column from string to numeric
         categories[column] = categories[column].astype('int')
 
-
+   
     df = df.drop('categories', axis=1)
+   
+    #print('pd before concat:', df)
     df = pd.concat([df, categories], axis=1) 
 
-    df = categories
     df = df.drop_duplicates()
 
     return df
 
 
 def save_data(df, database_filename):
+    print('database_filename:', database_filename)
     engine = create_engine(database_filename)
     df.to_sql('data', engine, index=False)
 
@@ -45,9 +47,13 @@ def main():
               .format(messages_filepath, categories_filepath))
         df = load_data(messages_filepath, categories_filepath)
 
+        print('df:', df.head())
+
         print('Cleaning data...')
         df = clean_data(df)
         
+        print('df:', df.head())
+
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
         save_data(df, database_filepath)
         

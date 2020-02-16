@@ -10,6 +10,12 @@ from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
+import pickle
+
+import sys
+sys.path.append('../models')
+
+import train_classifier
 
 
 app = Flask(__name__)
@@ -30,8 +36,13 @@ engine = create_engine('sqlite:///../data/database.db')
 df = pd.read_sql_table('data', engine)
 
 # load model
-model = joblib.load('../models/finalized_model.pkl')
-
+#model = joblib.load('../models/finalized_model.pkl')
+model_path = '../models/finalized_model.pkl'
+model = pickle.load(open(model_path, 'rb'))
+vectorizer_path = '../models/vectorizer.pkl'
+vectorizer = pickle.load(open(vectorizer_path, 'rb'))
+tfidf_path = '../models/tfidf.pkl'
+tfidf = pickle.load(open(tfidf_path, 'rb'))
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
@@ -78,11 +89,22 @@ def index():
 @app.route('/go')
 def go():
     # save user input in query
+    print('click')
     query = request.args.get('query', '') 
 
     # use model to predict classification for query
-    classification_labels = model.predict([query])[0]
-    classification_results = dict(zip(df.columns[4:], classification_labels))
+    num_col = 36
+    error_cols = [9]
+
+    predict = train_classifier.predict(model, [query], num_col, vectorizer, tfidf, error_cols)
+    print('predict:', predict)
+
+    print('classification_labels:', classification_labels)
+
+    print('df:', df.columns[4:])
+
+    #classification_results = dict(zip(df.columns[4:][0], classification_labels))
+    classification_results = {df.columns[4:][0] : classification_labels}
 
     # This will render the go.html Please see that file. 
     return render_template(

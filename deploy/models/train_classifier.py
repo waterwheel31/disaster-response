@@ -33,6 +33,8 @@ def load_data(database_filepath):
     engine = create_engine(database_filepath)
     df = pd.read_sql_table('data',con=engine)
     
+    print('df:', df.head())
+
     X = df.iloc[:,0].values
     Y = df.iloc[:,3:]
     category_names = Y.columns
@@ -52,25 +54,95 @@ def tokenize(text):
     return text
 
 
-def build_model():
-    pipeline = Pipeline([
-        ('vect', CountVectorizer(tokenizer=tokenize)),
-        ('ifidf', TfidfTransformer()),
-        ('clf', RandomForestClassifier())
-    ])
+def preprocess(X):
     
-    return pipeline
+    vectorizer = CountVectorizer(tokenizer=tokenize)
+    X = vectorizer.fit_transform(X)
+    tfidf = TfidfTransformer()
+    X = tfidf.fit_transform(X)
+    
+    return X, vectorizer, tfidf
+
+def preprocess_test(X, vectorizer, tfidf):
+
+    print('vectorizer:', vectorizer)
+    print('tfidf:', tfidf)
+    X = vectorizer.transform(X)
+    X = tfidf.transform(X)
+    
+    return X
+
+def train(X, Y):
+    clfs = [] 
+    error_cols = []
+    
+    num_col = Y.shape[1]
+    
+    print('num_col:', num_col)
+   
+    for i in range(num_col):
+ 
+        print('i:', i)
+        clf = LogisticRegression(class_weight='balanced')
+        #clf = RandomForestClassifier()
+        
+        try:
+            clf.fit(X, Y[:,i])
+        except Exception as e:
+            print('col:', i, ' caused error:', e)
+            error_cols.append(i)
+        clfs.append(clf)
+    return clfs, num_col, error_cols
+
+def pipeline_orig(X, y): 
+    
+    X, vectorizer, tfidf = preprocess(X)
+    clfs, num_col, error_cols = train(X, y)
+    return clfs, num_col, error_cols, vectorizer, tfidf
 
 
-def evaluate_model(model, X_test, Y_test, category_names):
+def predict(clfs, X, num_col, vectorizer, tfidf, error_cols=None):
     
-    y_pred = model.predict(X_test)
+    print('num_col:', num_col)
+    print('error_cols:', error_cols)
+    print('X:', X)
+    
+    result = []
+    
+    X_prep = preprocess_test(X, vectorizer, tfidf)
+    
+    for i in range(num_col):      
+        print('i:',i)
+       
+        if i in error_cols:        
+            pred = np.zeros(len(X))
+        else:
+            clf = clfs[i]  
+            pred = clf.predict(X_prep)
+        result.append(pred)
+     
+    result = np.array(result)
+    result = np.transpose(result)
+    
+    return result
+
+def build_model(model_path):
+     
+    model = pickle.load(open(model_path, 'rb'))
+    return model
+
+
+def evaluate_model(y_pred, y_test, category_names):
+    
+    print('y_pred:')
+    print(y_pred)
+
     try: 
         num_col = num_col = y_pred.shape[1]
     except: 
         num_col = 1
         
-    labels = Y.columns
+    labels = category_names
     
     accuracies = [] 
     fvalues = []
@@ -79,7 +151,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
         
         try:
             pred = y_pred[:,i]
-            test = y_test[:,i]
+            test = Y_test[:,i]
         except:
             pred = y_pred
             test = y_test
@@ -135,16 +207,26 @@ def main():
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
         
         print('Building model...')
-        model = build_model()
+        model = build_model(model_filepath)
         
         print('Training model...')
-        model.fit(X_train, Y_train)
-        
+        clfs, num_col, error_cols, vectorizer, tfidf = pipeline_orig(X_train, Y_train)
+
+        print('category names:', category_names)
+
         print('Evaluating model...')
-        evaluate_model(model, X_test, Y_test, category_names)
+        Y_test = Y_test
+        print('Y_test:', Y_test)
+        print('X_test:', X_test)
+
+        Y_pred = predict(clfs, X_test, num_col, vectorizer, tfidf, error_cols)
+        evaluate_model(Y_pred, Y_test, category_names)
 
         print('Saving model...\n    MODEL: {}'.format(model_filepath))
         save_model(model, model_filepath)
+        pickle.dump(vectorizer, open('models/vectorizer.pkl', 'wb'))
+        pickle.dump(tfidf, open('models/tfidf.pkl', 'wb'))
+        
 
         print('Trained model saved!')
 
