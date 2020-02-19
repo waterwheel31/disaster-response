@@ -56,7 +56,7 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    word_counts = df['message'].apply(lambda x: np.log(len(x.split())))
+    word_counts = df['message'].apply(lambda x: np.log10(len(x.split())))
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
