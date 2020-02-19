@@ -9,6 +9,13 @@ This is a simple web app to read disaster response messages and judge what kind 
 
 ![image](screenshot.png)
 
+
+### How the algorithm is? 
+
+- Using Logistic Regression to judge whether each message is categorized to each of 36 categories 
+- There are 36 models working parallel, and a message can be categorized in multiple categories
+- As for the preprocessing, Tf-idf is applied
+
 ### Instructions for running:
 1. Run the following commands in `deploy` directory to set up the database and model.
 

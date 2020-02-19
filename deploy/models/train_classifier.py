@@ -30,6 +30,18 @@ import pickle
 
 
 def load_data(database_filepath):
+
+    '''
+    This function is to read data from databse 
+
+    input argument: 
+        database_filepath: the path where database exists
+    return: 
+        X: X values of the dataset (dataframe)
+        Y: Y values of the dataset (dataframe)
+        category_names: name of categories (array)
+    '''
+
     engine = create_engine(database_filepath)
     df = pd.read_sql_table('data',con=engine)
    
@@ -42,6 +54,15 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+
+    '''
+    This function is process various preprocessing (clearning, lowering, tokenizing, remoming stop words and lemmatizing )
+
+    input argument: 
+        text: original text
+    return: 
+        text: processed text
+    '''
     
     text = re.sub(r"[^a-zA-Z0-9]", " ",text).lower()
     text = word_tokenize(text)
@@ -53,6 +74,18 @@ def tokenize(text):
 
 
 def preprocess(X):
+
+    '''
+    This function is to preprocess and fit count vectorizer and implement TfIdf
+    This is for training 
+
+    input argument: 
+        X: original data
+    return: 
+        X: processed data
+        vectorizer: fitted count vectorizer model
+        tfidf: fitted tfidf model 
+    '''
     
     vectorizer = CountVectorizer(tokenizer=tokenize)
     X = vectorizer.fit_transform(X)
@@ -63,12 +96,41 @@ def preprocess(X):
 
 def preprocess_test(X, vectorizer, tfidf):
 
+    '''
+    This function is to preprocess and fit count vectorizer and implement TfIdf
+    This is for predicting. 
+
+    input argument: 
+        X: original data
+        vectorizer: fitted count vectorizer model used for training
+        tfidf: fitted tfidf model used for training
+    return: 
+        X: processed data
+        
+    '''
+
     X = vectorizer.transform(X)
     X = tfidf.transform(X)
     
     return X
 
 def train(X, Y):
+    
+    '''
+    This is used for training
+
+    input argument: 
+        X: features data 
+        Y: target data
+    return: 
+        clfs: trained models (this is a list of individual models) 
+        num_col: number of the Y columns
+        error_cols: list of columns that caused errors during training
+        
+    '''
+
+
+
     clfs = [] 
     error_cols = []
     
@@ -89,6 +151,21 @@ def train(X, Y):
     return clfs, num_col, error_cols
 
 def pipeline_orig(X, y): 
+
+    '''
+    This is a pipeline for training, integrated functions above. 
+
+    input argument: 
+        X: features data 
+        y: target data
+    return: 
+        clfs: trained models (this is a list of individual models) 
+        num_col: number of the Y columns
+        error_cols: list of columns that caused errors during training
+        vectorizer: fitted count vectorizer model
+        tfidf: fitted tfidf model 
+        
+    '''
     
     X, vectorizer, tfidf = preprocess(X)
     clfs, num_col, error_cols = train(X, y)
@@ -96,6 +173,22 @@ def pipeline_orig(X, y):
 
 
 def predict(clfs, X, num_col, vectorizer, tfidf, error_cols=None):
+
+    '''
+    This is used for prediction
+
+    input argument: 
+        clfs: trained models (this is a list of individual models) 
+        X: features data 
+        num_col: number of the Y columns
+        error_cols: list of columns that caused errors during training
+        vectorizer: fitted count vectorizer model
+        tfidf: fitted tfidf model 
+        
+    return: 
+        result: predicted values for each cateogry for each data
+        
+    '''
     
     result = []
     
@@ -123,6 +216,19 @@ def build_model(model_path):
 
 
 def evaluate_model(y_pred, y_test, category_names):
+
+    '''
+    This is used evaluation
+
+    input argument: 
+        y_pred: predicted data
+        y_test: ground truth data
+        category_names: array of category names
+        
+    return: 
+        ave_fvalues: average of f-values for all columns 
+        
+    '''
     
    
     try: 

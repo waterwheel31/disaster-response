@@ -1,13 +1,14 @@
 import json
 import plotly
 import pandas as pd
+import numpy as np
 
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
 from flask import Flask
 from flask import render_template, request, jsonify
-from plotly.graph_objs import Bar
+from plotly.graph_objs import Bar, Histogram
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
 import pickle
@@ -55,6 +56,7 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+    word_counts = df['message'].apply(lambda x: np.log(len(x.split())))
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
@@ -74,6 +76,24 @@ def index():
                 },
                 'xaxis': {
                     'title': "Genre"
+                }
+            }
+        },
+        {
+            'data': [
+                Histogram(
+                    x=word_counts,
+                    
+                )
+            ],
+
+            'layout': {
+                'title': 'Word Counts of Messages',
+                'yaxis': {
+                    'title': "Count (number of messages)"
+                },
+                'xaxis': {
+                    'title': "Word Counts (log10 scale)"
                 }
             }
         }
